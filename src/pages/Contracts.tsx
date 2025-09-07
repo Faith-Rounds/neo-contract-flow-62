@@ -121,7 +121,10 @@ export default function Contracts() {
           <h1 className="text-3xl font-heading text-ink">Contracts</h1>
           <p className="text-muted-foreground mt-1">Manage and track all your agreements</p>
         </div>
-        <Button className="hover-glow">
+        <Button 
+          className="hover-glow"
+          onClick={() => navigate("/contracts/new")}
+        >
           <Plus className="h-4 w-4 mr-2" />
           New Contract
         </Button>
@@ -261,7 +264,7 @@ export default function Contracts() {
               }
               primaryAction={{
                 label: "New Contract",
-                onClick: () => console.log("New contract")
+                onClick: () => navigate("/contracts/new")
               }}
               secondaryAction={searchTerm || statusFilter !== "All" ? {
                 label: "Clear Filters",

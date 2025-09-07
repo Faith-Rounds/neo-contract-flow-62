@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Plus, Trash2, FileText, DollarSign, Calendar, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, FileText, DollarSign, Calendar, User, Target, Clock, CreditCard, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Milestone {
@@ -16,6 +16,42 @@ interface Milestone {
   description: string;
   amount: number;
 }
+
+type ReceivableType = "milestone" | "hourly" | "fixed" | "equity";
+
+interface ReceivableOption {
+  id: ReceivableType;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+const receivableOptions: ReceivableOption[] = [
+  {
+    id: "milestone",
+    name: "Milestone-based",
+    description: "Payment tied to specific deliverables and milestones",
+    icon: <Target className="h-5 w-5" />
+  },
+  {
+    id: "hourly",
+    name: "Hourly Rate",
+    description: "Payment based on hours worked with time tracking",
+    icon: <Clock className="h-5 w-5" />
+  },
+  {
+    id: "fixed",
+    name: "Fixed Price",
+    description: "Single lump sum payment upon completion",
+    icon: <CreditCard className="h-5 w-5" />
+  },
+  {
+    id: "equity",
+    name: "Equity/Revenue Share",
+    description: "Payment through equity or percentage of revenue",
+    icon: <TrendingUp className="h-5 w-5" />
+  }
+];
 
 const templates = [
   {
@@ -50,6 +86,7 @@ export default function NewContract() {
     title: "",
     description: "",
     freelancerEmail: "",
+    receivableType: "milestone" as ReceivableType,
     milestones: [] as Milestone[]
   });
 
@@ -117,7 +154,9 @@ export default function NewContract() {
   const progress = (step / 3) * 100;
 
   const canProceedStep1 = formData.title.trim() && formData.description.trim();
-  const canProceedStep2 = formData.milestones.length > 0 && formData.milestones.every(m => m.description.trim() && m.amount > 0);
+  const canProceedStep2 = formData.receivableType === "milestone" 
+    ? formData.milestones.length > 0 && formData.milestones.every(m => m.description.trim() && m.amount > 0)
+    : true; // For other types, we assume the form is valid for now
   const canProceedStep3 = formData.freelancerEmail.trim();
 
   return (
@@ -150,7 +189,7 @@ export default function NewContract() {
           <Progress value={progress} className="h-2" />
           <div className="flex justify-between mt-2 text-sm text-muted-foreground">
             <span className={step >= 1 ? "text-primary" : ""}>Project Details</span>
-            <span className={step >= 2 ? "text-primary" : ""}>Milestones</span>
+            <span className={step >= 2 ? "text-primary" : ""}>Payment Setup</span>
             <span className={step >= 3 ? "text-primary" : ""}>Review & Send</span>
           </div>
         </div>
@@ -192,6 +231,42 @@ export default function NewContract() {
                 </CardContent>
               </Card>
 
+              {/* Receivable Type Selection */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Receivable Type</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {receivableOptions.map((option) => (
+                      <div
+                        key={option.id}
+                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
+                          formData.receivableType === option.id 
+                            ? "border-primary bg-primary/5 shadow-glow" 
+                            : "hover:border-muted-foreground/30"
+                        }`}
+                        onClick={() => handleInputChange("receivableType", option.id)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-md ${
+                            formData.receivableType === option.id 
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-muted"
+                          }`}>
+                            {option.icon}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-ink mb-1">{option.name}</h4>
+                            <p className="text-sm text-muted-foreground">{option.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Templates */}
               <Card>
                 <CardHeader>
@@ -227,7 +302,7 @@ export default function NewContract() {
                   disabled={!canProceedStep1}
                   className="gap-2 hover-glow"
                 >
-                  Next: Milestones
+                  Next: {formData.receivableType === "milestone" ? "Milestones" : "Payment Setup"}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -241,67 +316,185 @@ export default function NewContract() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                   <CardTitle className="flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
-                    Project Milestones
+                    {formData.receivableType === "milestone" ? "Project Milestones" : 
+                     formData.receivableType === "hourly" ? "Hourly Rate Setup" :
+                     formData.receivableType === "fixed" ? "Fixed Price Setup" : 
+                     "Equity/Revenue Setup"}
                   </CardTitle>
-                  <Button onClick={addMilestone} size="sm" variant="outline" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Milestone
-                  </Button>
+                  {formData.receivableType === "milestone" && (
+                    <Button onClick={addMilestone} size="sm" variant="outline" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add Milestone
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {formData.milestones.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No milestones added yet.</p>
-                      <p className="text-sm">Click "Add Milestone" to get started.</p>
+                  {formData.receivableType === "milestone" ? (
+                    <>
+                      {formData.milestones.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p>No milestones added yet.</p>
+                          <p className="text-sm">Click "Add Milestone" to get started.</p>
+                        </div>
+                      ) : (
+                        formData.milestones.map((milestone, index) => (
+                          <div key={milestone.id} className="border rounded-lg p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium">Milestone {index + 1}</h4>
+                              <Button
+                                onClick={() => removeMilestone(milestone.id)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="md:col-span-2">
+                                <Label htmlFor={`milestone-desc-${milestone.id}`}>Description</Label>
+                                <Input
+                                  id={`milestone-desc-${milestone.id}`}
+                                  placeholder="Milestone deliverable description"
+                                  value={milestone.description}
+                                  onChange={(e) => updateMilestone(milestone.id, "description", e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`milestone-amount-${milestone.id}`}>Amount (USDC)</Label>
+                                <Input
+                                  id={`milestone-amount-${milestone.id}`}
+                                  type="number"
+                                  placeholder="0"
+                                  value={milestone.amount || ""}
+                                  onChange={(e) => updateMilestone(milestone.id, "amount", parseFloat(e.target.value) || 0)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+
+                      {formData.milestones.length > 0 && (
+                        <>
+                          <Separator />
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Total Contract Value</span>
+                            <span className="text-2xl font-heading text-primary">${totalAmount.toLocaleString()}</span>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  ) : formData.receivableType === "hourly" ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="hourlyRate">Hourly Rate (USDC)</Label>
+                          <Input
+                            id="hourlyRate"
+                            type="number"
+                            placeholder="50"
+                            className="focus:shadow-glow"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="estimatedHours">Estimated Hours</Label>
+                          <Input
+                            id="estimatedHours"
+                            type="number"
+                            placeholder="40"
+                            className="focus:shadow-glow"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="maxHours">Maximum Hours (Optional)</Label>
+                        <Input
+                          id="maxHours"
+                          type="number"
+                          placeholder="100"
+                          className="focus:shadow-glow"
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Set a cap on billable hours to prevent overruns
+                        </p>
+                      </div>
+                    </div>
+                  ) : formData.receivableType === "fixed" ? (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="fixedAmount">Fixed Payment Amount (USDC)</Label>
+                        <Input
+                          id="fixedAmount"
+                          type="number"
+                          placeholder="5000"
+                          className="focus:shadow-glow"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="deliveryDate">Expected Delivery Date</Label>
+                        <Input
+                          id="deliveryDate"
+                          type="date"
+                          className="focus:shadow-glow"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="paymentTerms">Payment Terms</Label>
+                        <select className="w-full p-2 border rounded-md">
+                          <option value="completion">Payment on completion</option>
+                          <option value="50-50">50% upfront, 50% on completion</option>
+                          <option value="30-70">30% upfront, 70% on completion</option>
+                        </select>
+                      </div>
                     </div>
                   ) : (
-                    formData.milestones.map((milestone, index) => (
-                      <div key={milestone.id} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium">Milestone {index + 1}</h4>
-                          <Button
-                            onClick={() => removeMilestone(milestone.id)}
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="equityPercentage">Equity Percentage (%)</Label>
+                          <Input
+                            id="equityPercentage"
+                            type="number"
+                            step="0.1"
+                            placeholder="2.5"
+                            className="focus:shadow-glow"
+                          />
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="md:col-span-2">
-                            <Label htmlFor={`milestone-desc-${milestone.id}`}>Description</Label>
-                            <Input
-                              id={`milestone-desc-${milestone.id}`}
-                              placeholder="Milestone deliverable description"
-                              value={milestone.description}
-                              onChange={(e) => updateMilestone(milestone.id, "description", e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor={`milestone-amount-${milestone.id}`}>Amount (USDC)</Label>
-                            <Input
-                              id={`milestone-amount-${milestone.id}`}
-                              type="number"
-                              placeholder="0"
-                              value={milestone.amount || ""}
-                              onChange={(e) => updateMilestone(milestone.id, "amount", parseFloat(e.target.value) || 0)}
-                            />
-                          </div>
+                        <div>
+                          <Label htmlFor="revenueShare">Revenue Share (%)</Label>
+                          <Input
+                            id="revenueShare"
+                            type="number"
+                            step="0.1"
+                            placeholder="5"
+                            className="focus:shadow-glow"
+                          />
                         </div>
                       </div>
-                    ))
-                  )}
-
-                  {formData.milestones.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Total Contract Value</span>
-                        <span className="text-2xl font-heading text-primary">${totalAmount.toLocaleString()}</span>
+                      <div>
+                        <Label htmlFor="vestingPeriod">Vesting Period (months)</Label>
+                        <Input
+                          id="vestingPeriod"
+                          type="number"
+                          placeholder="12"
+                          className="focus:shadow-glow"
+                        />
                       </div>
-                    </>
+                      <div>
+                        <Label htmlFor="minimumPayout">Minimum Guaranteed Payment (USDC)</Label>
+                        <Input
+                          id="minimumPayout"
+                          type="number"
+                          placeholder="1000"
+                          className="focus:shadow-glow"
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Optional minimum payment regardless of equity/revenue performance
+                        </p>
+                      </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>

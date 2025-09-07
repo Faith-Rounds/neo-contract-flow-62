@@ -187,7 +187,7 @@ export default function Home() {
                 description="Create your first contract to get started"
                 primaryAction={{
                   label: "New Contract",
-                  onClick: () => console.log("New contract")
+                  onClick: () => window.location.href = "/contracts/new"
                 }}
               />
             )}
