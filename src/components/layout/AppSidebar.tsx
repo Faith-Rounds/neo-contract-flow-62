@@ -26,7 +26,6 @@ export function AppSidebar() {
 
   const isCollapsed = state === "collapsed";
 
-  // Used for the label span so we can force text-black when inactive
   const isActive = (path: string) => {
     if (path === "/") return currentPath === "/";
     return currentPath.startsWith(path);
@@ -58,24 +57,14 @@ export function AppSidebar() {
                       className={({ isActive }) =>
                         cn(
                           "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
-                          // keep hover bg/animation, but remove hover text-color so it doesn't override black
-                          "hover:bg-sidebar-accent hover:shadow-sm hover:-translate-y-0.5",
-                          isActive
-                            ? "bg-primary text-primary-foreground shadow-glow"
-                            : "text-black"
+                          "text-black hover:bg-sidebar-accent hover:shadow-sm hover:-translate-y-0.5",
+                          isActive ? "bg-primary" : ""
                         )
                       }
                     >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <item.icon className="h-5 w-5 flex-shrink-0 text-black" />
                       {!isCollapsed && (
-                        <span
-                          className={cn(
-                            "font-medium",
-                            isActive(item.url)
-                              ? "text-primary-foreground"
-                              : "text-black"
-                          )}
-                        >
+                        <span className="font-medium text-black">
                           {item.title}
                         </span>
                       )}

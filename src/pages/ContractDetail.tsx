@@ -266,11 +266,11 @@ export default function ContractDetail() {
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
-                    <span className="font-medium">{contract.client}</span> ↔ <span className="font-medium">{contract.freelancer}</span>
+                    <span className="font-medium">{contract.client || contract.counterparty}</span> ↔ <span className="font-medium">{contract.freelancer || (contract.role === "Sent" ? contract.counterparty : "You")}</span>
                   </span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Created {contract.createdAt.toLocaleDateString()}
+                  Created {contract.createdAt ? contract.createdAt.toLocaleDateString() : contract.updated.toLocaleDateString()}
                 </div>
               </div>
 
@@ -336,7 +336,7 @@ export default function ContractDetail() {
               <CardTitle>Milestones</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {contract.milestones.map((milestone) => (
+              {contract.milestones?.length > 0 ? contract.milestones.map((milestone) => (
                 <div key={milestone.id} className="border rounded-lg p-4 hover-glow">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -392,7 +392,11 @@ export default function ContractDetail() {
                     )}
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No milestones found for this contract.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
