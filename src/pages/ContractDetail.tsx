@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,9 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ApproveModal } from "@/components/modals/ApproveModal";
+import { FundModal, Receipt } from "@/components/modals/FundModal";
+import { useToast } from "@/hooks/use-toast";
+import { useContracts, Contract } from "@/lib/contracts-context";
 import {
   ArrowLeft,
   User,
@@ -16,7 +19,8 @@ import {
   AlertCircle,
   FileText,
   Upload,
-  Download
+  Download,
+  Loader2
 } from "lucide-react";
 
 // Mock contract detail data
@@ -110,13 +114,25 @@ const getMilestoneIcon = (status: string) => {
 export default function ContractDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { getContract, updateContract } = useContracts();
   const [currentRole] = useState<"Cassie" | "Freddy">("Cassie"); // This would come from global state
   const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [fundModalOpen, setFundModalOpen] = useState(false);
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
-  const [contract, setContract] = useState(mockContract);
-
-  const progressPercentage = (contract.accrued / contract.total) * 100;
-  const balance = contract.accrued - contract.paid;
+  const [contract, setContract] = useState<Contract | undefined>(undefined);
+  const [isFunding, setIsFunding] = useState(false);
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
+  
+  // Load contract from context when component mounts or id changes
+  useEffect(() => {
+    if (id) {
+      const contractData = getContract(id);
+      if (contractData) {
+        setContract(contractData);
+      }
+    }
+  }, [id, getContract]);
 
   const handleApprove = (milestone: Milestone) => {
     setSelectedMilestone(milestone);
@@ -124,15 +140,68 @@ export default function ContractDetail() {
   };
 
   const handleApproveConfirm = (milestoneId: string, notes?: string) => {
-    setContract(prev => ({
-      ...prev,
-      milestones: prev.milestones.map(m => 
+    if (!contract || !id) return;
+    
+    // Calculate new accrued amount
+    const milestone = contract.milestones?.find(m => m.id === milestoneId);
+    const newAccrued = contract.accrued + (milestone?.amount || 0);
+    
+    // Create updated contract object
+    const updatedContract = {
+      ...contract,
+      milestones: contract.milestones?.map(m => 
         m.id === milestoneId 
           ? { ...m, status: "Approved" as const, approvedAt: new Date() }
           : m
       ),
-      accrued: prev.accrued + (prev.milestones.find(m => m.id === milestoneId)?.amount || 0)
-    }));
+      accrued: newAccrued
+    };
+    
+    // Update local state
+    setContract(updatedContract);
+    
+    // Update in context
+    updateContract(id, updatedContract);
+  };
+
+  const handleFundContract = () => {
+    setFundModalOpen(true);
+  };
+
+  const handleFundConfirm = (receipt: Receipt) => {
+    if (!contract || !id) return;
+    
+    if (receipt.status === "pending") {
+      // Handle pending state
+      setIsFunding(true);
+      setReceipt(receipt);
+    } else if (receipt.status === "confirmed") {
+      // Handle confirmed state
+      setIsFunding(false);
+      setReceipt(receipt);
+      
+      // Create updated contract with Active status
+      const updatedContract = {
+        ...contract,
+        status: "Active" as const
+      };
+      
+      // Update local state
+      setContract(updatedContract);
+      
+      // Update in context
+      updateContract(id, updatedContract);
+    } else if (receipt.status === "failed") {
+      // Handle failed state
+      setIsFunding(false);
+      setReceipt(receipt);
+      
+      toast({
+        title: "Funding failed",
+        description: "There was an error funding the contract. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const isClient = currentRole === "Cassie";
@@ -150,6 +219,10 @@ export default function ContractDetail() {
       />
     );
   }
+  
+  // Calculate derived values
+  const progressPercentage = contract ? (contract.accrued / contract.total) * 100 : 0;
+  const balance = contract ? contract.accrued - (contract.paid || 0) : 0;
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -225,11 +298,24 @@ export default function ContractDetail() {
               <div className="flex gap-3 pt-4">
                 {isClient && (
                   <>
-                    <Button className="hover-glow">
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      Fund Contract
+                    <Button 
+                      className="hover-glow" 
+                      onClick={handleFundContract}
+                      disabled={isFunding || contract.status !== "Draft"}
+                    >
+                      {isFunding ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Funding...
+                        </>
+                      ) : (
+                        <>
+                          <DollarSign className="h-4 w-4 mr-2" />
+                          Fund Contract
+                        </>
+                      )}
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" disabled={isFunding}>
                       Cancel Contract
                     </Button>
                   </>
@@ -386,6 +472,15 @@ export default function ContractDetail() {
           onApprove={handleApproveConfirm}
         />
       )}
+
+      {/* Fund Modal */}
+      <FundModal
+        open={fundModalOpen}
+        onOpenChange={setFundModalOpen}
+        contractTitle={contract.title}
+        contractTotal={contract.total}
+        onFund={handleFundConfirm}
+      />
     </div>
   );
 }

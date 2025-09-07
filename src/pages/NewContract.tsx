@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Plus, Trash2, FileText, DollarSign, Calendar, User, Target, Clock, CreditCard, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useContracts } from "@/lib/contracts-context";
 
 interface Milestone {
   id: string;
@@ -80,6 +81,7 @@ export default function NewContract() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { addContract } = useContracts();
 
   // Form data
   const [formData, setFormData] = useState({
@@ -139,15 +141,42 @@ export default function NewContract() {
   const handleSubmit = async () => {
     setLoading(true);
     
-    // Mock contract creation
-    setTimeout(() => {
+    try {
+      // Create a new contract using the context
+      const newContractId = addContract({
+        title: formData.title,
+        description: formData.description,
+        role: "Sent",
+        counterparty: formData.freelancerEmail.split('@')[0] || "Freelancer", // Simple extraction of name from email
+        status: "Draft",
+        total: totalAmount,
+        accrued: 0,
+        milestones: formData.milestones.map((m, index) => ({
+          id: m.id,
+          index: index + 1,
+          amount: m.amount,
+          description: m.description,
+          status: "Draft"
+        }))
+      });
+      
       toast({
         title: "Contract created!",
         description: "Your contract has been created and is ready to be funded.",
       });
+      
+      // Navigate to the contracts list
       navigate("/contracts");
+    } catch (error) {
+      console.error("Error creating contract:", error);
+      toast({
+        title: "Error creating contract",
+        description: "There was a problem creating your contract. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const totalAmount = formData.milestones.reduce((sum, m) => sum + m.amount, 0);

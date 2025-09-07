@@ -23,9 +23,10 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
-  
+
   const isCollapsed = state === "collapsed";
 
+  // Used for the label span so we can force text-black when inactive
   const isActive = (path: string) => {
     if (path === "/") return currentPath === "/";
     return currentPath.startsWith(path);
@@ -35,7 +36,7 @@ export function AppSidebar() {
     <Sidebar className={cn(isCollapsed ? "w-14" : "w-60")} collapsible="icon">
       <SidebarContent className="pt-8">
         {/* Logo */}
-        <div className="px-4 mb-8">
+        <div className="px-4 mb-8 mr-4">
           {!isCollapsed ? (
             <h1 className="text-2xl font-heading text-primary">Mesyk</h1>
           ) : (
@@ -57,15 +58,27 @@ export function AppSidebar() {
                       className={({ isActive }) =>
                         cn(
                           "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
-                          "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-sm hover:-translate-y-0.5",
+                          // keep hover bg/animation, but remove hover text-color so it doesn't override black
+                          "hover:bg-sidebar-accent hover:shadow-sm hover:-translate-y-0.5",
                           isActive
                             ? "bg-primary text-primary-foreground shadow-glow"
-                            : ""
+                            : "text-black"
                         )
                       }
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                      {!isCollapsed && (
+                        <span
+                          className={cn(
+                            "font-medium",
+                            isActive(item.url)
+                              ? "text-primary-foreground"
+                              : "text-black"
+                          )}
+                        >
+                          {item.title}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

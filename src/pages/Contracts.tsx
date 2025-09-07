@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useContracts } from "@/lib/contracts-context";
 import {
   Table,
   TableBody,
@@ -28,50 +29,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-// Mock contract data
-interface Contract {
-  id: string;
-  title: string;
-  role: "Sent" | "Received";
-  counterparty: string;
-  status: "Draft" | "Active" | "Cancelled" | "Completed";
-  total: number;
-  accrued: number;
-  updated: Date;
-}
-
-const mockContracts: Contract[] = [
-  {
-    id: "1",
-    title: "Website Redesign Project",
-    role: "Sent",
-    counterparty: "Freddy Dev",
-    status: "Active",
-    total: 1000,
-    accrued: 300,
-    updated: new Date(Date.now() - 2 * 60 * 60 * 1000)
-  },
-  {
-    id: "2", 
-    title: "Mobile App UI Design",
-    role: "Received",
-    counterparty: "Cassie Client",
-    status: "Active", 
-    total: 800,
-    accrued: 400,
-    updated: new Date(Date.now() - 6 * 60 * 60 * 1000)
-  },
-  {
-    id: "3",
-    title: "Logo Design Brief",
-    role: "Sent",
-    counterparty: "Alex Designer",
-    status: "Completed",
-    total: 500,
-    accrued: 500,
-    updated: new Date(Date.now() - 24 * 60 * 60 * 1000)
-  }
-];
+// Contract interface is now imported from contracts-context
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -101,8 +59,9 @@ export default function Contracts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const navigate = useNavigate();
+  const { contracts } = useContracts();
 
-  const filteredContracts = mockContracts.filter(contract => {
+  const filteredContracts = contracts.filter(contract => {
     const matchesSearch = contract.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          contract.counterparty.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "All" || contract.status === statusFilter;
