@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useContracts } from "@/lib/contracts-context";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -55,21 +56,49 @@ const formatTimeAgo = (date: Date) => {
   return `${Math.floor(diffHours / 24)}d ago`;
 };
 
+// Mock freelancer contract for withdraw template demonstration
+const freelancerContract = {
+  id: "withdraw-template-1",
+  title: "Mobile App Development Project",
+  role: "Received",
+  counterparty: "Tech Innovations Inc.",
+  status: "Active",
+  total: 5000,
+  accrued: 3500,
+  paid: 1500,
+  updated: new Date("2024-08-20T14:30:00Z")
+};
+
 export default function Contracts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [currentRole, setCurrentRole] = useState<"client" | "freelancer">("client");
   const navigate = useNavigate();
   const { contracts } = useContracts();
 
-  const filteredContracts = contracts.filter(contract => {
+  // Combine regular contracts with the freelancer contract when in freelancer mode
+  const allContracts = currentRole === "freelancer" 
+    ? [freelancerContract, ...contracts]
+    : contracts;
+    
+  const filteredContracts = allContracts.filter(contract => {
     const matchesSearch = contract.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          contract.counterparty.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "All" || contract.status === statusFilter;
+    // In freelancer mode, prioritize showing the freelancer contract
+    if (currentRole === "freelancer" && contract.id === "withdraw-template-1") {
+      return true;
+    }
     return matchesSearch && matchesStatus;
   });
 
   const handleRowClick = (contractId: string) => {
-    navigate(`/contracts/${contractId}`);
+    // If it's the freelancer contract, navigate to the withdraw template
+    if (contractId === "withdraw-template-1") {
+      navigate(`/withdraw-template`);
+    } else {
+      navigate(`/contracts/${contractId}`);
+    }
   };
 
   return (
@@ -80,13 +109,23 @@ export default function Contracts() {
           <h1 className="text-3xl font-heading text-ink">Contracts</h1>
           <p className="text-muted-foreground mt-1">Manage and track all your agreements</p>
         </div>
-        <Button 
-          className="hover-glow"
-          onClick={() => navigate("/contracts/new")}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Contract
-        </Button>
+        <div className="flex items-center gap-4">
+          {/* Role Toggle */}
+          <Tabs value={currentRole} onValueChange={(value) => setCurrentRole(value as "client" | "freelancer")} className="mr-4">
+            <TabsList>
+              <TabsTrigger value="client">Client View</TabsTrigger>
+              <TabsTrigger value="freelancer">Freelancer View</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <Button 
+            className="hover-glow"
+            onClick={() => navigate("/contracts/new")}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Contract
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

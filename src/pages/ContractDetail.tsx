@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ApproveModal } from "@/components/modals/ApproveModal";
 import { FundModal, Receipt } from "@/components/modals/FundModal";
+import { CancelContractModal } from "@/components/modals/CancelContractModal";
+import { WithdrawFundsModal } from "@/components/modals/WithdrawFundsModal";
 import { useToast } from "@/hooks/use-toast";
 import { useContracts, Contract } from "@/lib/contracts-context";
 import {
@@ -119,9 +121,13 @@ export default function ContractDetail() {
   const [currentRole] = useState<"Cassie" | "Freddy">("Cassie"); // This would come from global state
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [fundModalOpen, setFundModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
   const [contract, setContract] = useState<Contract | undefined>(undefined);
   const [isFunding, setIsFunding] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   
   // Load contract from context when component mounts or id changes
@@ -202,6 +208,64 @@ export default function ContractDetail() {
         variant: "destructive"
       });
     }
+  };
+
+  const handleCancelContract = (reason: string, killFee: number) => {
+    if (!contract || !id) return;
+    
+    setIsCancelling(true);
+    
+    // Calculate refund amount
+    const refundAmount = contract.total - killFee;
+    
+    // Create updated contract with Cancelled status
+    const updatedContract = {
+      ...contract,
+      status: "Cancelled" as const,
+      accrued: contract.accrued + killFee // Add kill fee to accrued amount for freelancer
+    };
+    
+    // Update local state
+    setContract(updatedContract);
+    
+    // Update in context
+    updateContract(id, updatedContract);
+    
+    // Reset cancelling state
+    setTimeout(() => {
+      setIsCancelling(false);
+      toast({
+        title: "Contract cancelled",
+        description: `The contract has been cancelled. Kill fee: $${killFee.toFixed(2)}, Refund: $${refundAmount.toFixed(2)}`
+      });
+    }, 500);
+  };
+
+  const handleWithdrawFunds = (amount: number, method: string, details: any) => {
+    if (!contract || !id) return;
+    
+    setIsWithdrawing(true);
+    
+    // Create updated contract with updated paid amount
+    const updatedContract = {
+      ...contract,
+      paid: (contract.paid || 0) + amount
+    };
+    
+    // Update local state
+    setContract(updatedContract);
+    
+    // Update in context
+    updateContract(id, updatedContract);
+    
+    // Reset withdrawing state
+    setTimeout(() => {
+      setIsWithdrawing(false);
+      toast({
+        title: "Withdrawal successful",
+        description: `$${amount.toFixed(2)} has been withdrawn to your ${method === "bank" ? "bank account" : method === "card" ? "card" : "crypto wallet"}.`
+      });
+    }, 500);
   };
 
   const isClient = currentRole === "Cassie";
@@ -315,15 +379,39 @@ export default function ContractDetail() {
                         </>
                       )}
                     </Button>
-                    <Button variant="outline" disabled={isFunding}>
-                      Cancel Contract
+                    <Button 
+                      variant="outline" 
+                      disabled={isFunding || isCancelling}
+                      onClick={() => setCancelModalOpen(true)}
+                    >
+                      {isCancelling ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Cancelling...
+                        </>
+                      ) : (
+                        "Cancel Contract"
+                      )}
                     </Button>
                   </>
                 )}
                 {isFreelancer && (
-                  <Button className="bg-accent hover:bg-accent-600 hover-neon">
-                    <Download className="h-4 w-4 mr-2" />
-                    Withdraw ${balance}
+                  <Button 
+                    className="bg-accent hover:bg-accent-600 hover-neon"
+                    onClick={() => setWithdrawModalOpen(true)}
+                    disabled={balance <= 0 || isWithdrawing}
+                  >
+                    {isWithdrawing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-2" />
+                        Withdraw ${balance}
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
@@ -484,6 +572,25 @@ export default function ContractDetail() {
         contractTitle={contract.title}
         contractTotal={contract.total}
         onFund={handleFundConfirm}
+      />
+
+      {/* Cancel Contract Modal */}
+      <CancelContractModal
+        open={cancelModalOpen}
+        onOpenChange={setCancelModalOpen}
+        contractTitle={contract.title}
+        contractTotal={contract.total}
+        contractStartDate={contract.createdAt || contract.updated}
+        onCancel={handleCancelContract}
+      />
+
+      {/* Withdraw Funds Modal */}
+      <WithdrawFundsModal
+        open={withdrawModalOpen}
+        onOpenChange={setWithdrawModalOpen}
+        contractTitle={contract.title}
+        availableBalance={balance}
+        onWithdraw={handleWithdrawFunds}
       />
     </div>
   );

@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Contracts from "./pages/Contracts";
 import ContractDetail from "./pages/ContractDetail";
 import NewContract from "./pages/NewContract";
+import WithdrawTemplate from "./pages/WithdrawTemplate";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="contracts" element={<Contracts />} />
             <Route path="contracts/new" element={<NewContract />} />
             <Route path="contracts/:id" element={<ContractDetail />} />
+            <Route path="withdraw-template" element={<WithdrawTemplate />} />
             <Route path="profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<NotFound />} />
