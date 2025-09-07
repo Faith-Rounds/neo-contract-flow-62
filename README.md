@@ -72,42 +72,16 @@ per-milestone storage (m0, m1, ...) with amount, submitted, approved, hash, appr
 - Role-based permissions.
 - Update/Delete permanently disabled after seal.
 
-## 🎥 Demo & Walkthrough
-- Demo video: <INSERT_DEMO_VIDEO_LINK_HERE>
-- Screenshots: <INSERT_SCREENSHOT_LINKS_HERE>
-- Code walkthrough video (with audio): <INSERT_LOOM_OR_YOUTUBE_LINK_HERE>
-- Presentation slides (Canva): <INSERT_CANVA_LINK_HERE>
+## Demo & Walkthrough
+- Demo video: https://drive.google.com/file/d/1HiT7-6I9uy-6udm2Dv_kCe6Js3L9LjFr/view?usp=share_link
+- Code walkthrough video (with audio): https://drive.google.com/file/d/1HuSSraYvaqSBE4YH-XPRKEHRrAQ9nwx2/view?usp=share_link
+- Presentation slides (Canva): https://www.canva.com/design/DAGyTxAPf_s/Tdd4a-Rq1GLzKfdQ5enA_w/edit?utm_content=DAGyTxAPf_s&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
-## 📊 Screenshots
-DashboardContract DetailMilestone ApprovalProfile
+## Screenshots
+Screenshots are located in src/assets folder.
 
-<img src="<DASHBOARD_SCREENSHOT>" width="220"/>
-<img src="<CONTRACT_DETAIL_SCREENSHOT>" width="220"/>
-<img src="<MILESTONE_APPROVAL_SCREENSHOT>" width="220"/>
-<img src="<PROFILE_SCREENSHOT>" width="220"/>
 
-## 📂 Repo Structure
-```
-/mesyk
-  /contracts     # PyTeal smart contracts
-  /frontend      # React + Vite app
-  /scripts       # signer proxy + test utilities
-  /mocks         # demo seed data (Cassie Client, Freddy Dev)
-  /docs          # screenshots, slides, video assets
-  README.md
-```
-
-## ✅ Requirements Checklist
-- [x] Built with Algorand smart contracts (PyTeal).
-- [x] Open source (MIT licensed).
-- [x] Includes short + full description.
-- [x] Includes technical description of SDKs + Algorand features.
-- [x] Canva slides included (<INSERT_LINK>).
-- [x] Custom, non-boilerplate smart contract.
-- [x] Fully-functioning demo with video proof.
-- [x] README includes video, screenshots, repo walkthrough.
-
-## 🌐 Why This Matters
+## Why This Matters
 Mesyk isn't just another escrow app.
 
 It's a blueprint for the future of global collaboration—where a designer in Lagos, a developer in São Paulo, and a client in Berlin can collaborate seamlessly, with trust enforced by Algorand, not middlemen.
